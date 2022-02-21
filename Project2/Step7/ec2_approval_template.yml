@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'A sample AWS Cloudformation template to demonstrate a provisioning of EC2 Linux Instance from defined list of instance types. 
+              This template has a wait condition which can be used to trigger a approval workflow. This template depends on a stack to import values 
+              that are required to lookup a linux ami id and also trigger approval workflow'
+Metadata:
+  LICENSE: >-
+    MIT No Attribution
+    
+    Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this
+    software and associated documentation files (the "Software"), to deal in the Software
+    without restriction, including without limitation the rights to use, copy, modify,
+    merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Parameters:
+  pNotificationLambdaFunctionArn:
+    Type: String
+    Description: The arn of the lambda function responsible for sending the approval email
+  InstanceType:
+    Default: t2.small
+    Description: EC2 instance type
+    Type: String
+  UserEmail:
+    AllowedPattern: '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+    ConstraintDescription: This is not a valid email id.
+    Default: "abc.xyz@email.com"
+    Description: Enter your Email ID. You will be contacted by approver for more information.
+    MaxLength: '64'
+    MinLength: '1'
+    Type: String
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+  WaitHandle:
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+
+  WaitCondition:
+    Type: 'AWS::CloudFormation::WaitCondition'
+    Properties:
+      Handle:
+        !Ref 'WaitHandle'
+      Timeout: '43200'
+
+  NotificationFunction:
+    Type: Custom::NotificationFunction
+    Properties:
+      ServiceToken: !Ref pNotificationLambdaFunctionArn
+      Region: !Ref "AWS::Region"
+      WaitUrl: !Ref WaitHandle
+      EmailID: !Ref UserEmail
+
+  LinuxEC2Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: 'WaitCondition'
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType:
+        Ref: InstanceType
+
+Outputs:
+  EC2PublicIP:
+    Description: Requested EC2 public IP
+    Value: !GetAtt LinuxEC2Instance.PublicIp

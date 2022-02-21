@@ -1,0 +1,15 @@
+{
+    "RequestType": "Create",
+    "ServiceToken": "arn:aws:lambda:us-east-1:1234:function:SnsNotificationLambda-cca670",
+    "ResponseURL": "https://cloudformation-custom-resource-response-useast1.s3.amazonaws.com/arn%3Aaws%3Acloudformation%3Aus-east-1%3A1234%3Astack/approval-test-ec222/b24adc40-9350-11ec-8461-12ed80bf1fcb%7CNotificationFunction%7C7f0ac960-cba2-4fef-be6b-996802db4d3d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20220221T195913Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=ASDF%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=asdf",
+    "StackId": "asdf",
+    "RequestId": "asdf",
+    "LogicalResourceId": "NotificationFunction",
+    "ResourceType": "Custom::NotificationFunction",
+    "ResourceProperties": {
+        "ServiceToken": "arn:aws:lambda:us-east-1:1234:function:SnsNotificationLambda-cca670",
+        "EmailID": "abc.xyz@email.com",
+        "Region": "us-east-1",
+        "WaitUrl": "https://cloudformation-waitcondition-us-east-1.s3.amazonaws.com/arn%3Aaws%3Acloudformation%3Aus-east-1%3A1234%3Astack/approval-test-ec222/b24adc40-9350-11ec-8461-12ed80bf1fcb/WaitHandle?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20220221T195910Z&X-Amz-SignedHeaders=host&X-Amz-Expires=86399&X-Amz-Credential=AKIA6L7Q4OWT2GZYHG7N%2F20220221%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=asdf"
+    }
+}

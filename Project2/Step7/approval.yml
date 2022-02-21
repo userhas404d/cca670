@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  pProjectName:
+    Type: String
+    Default: cca670
+    Description: The name of the project.
+  pEmailAddress:
+    Type: String
+    Description: The email address to subscribe to the sns topic.
+
+Resources:
+  rSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub NotificationTopic-${pProjectName}
+      Subscription: 
+        - 
+          Endpoint: !Ref pEmailAddress
+          Protocol: email
+      TopicName: !Sub NotificationTopic-${pProjectName}
+
+  rWorkflowApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub WorkflowApiGW-${pProjectName}
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET, OPTIONS'"
+        AllowOrigin: "'*'"
+
+  rInvokeUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Invoke endpoint of the Api Gateway for the CFN approval workflow lambda
+      Name: "ApprovalWorkflowInvokeUrl"
+      Type: String
+      Value: !Sub "https://${rWorkflowApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/approveRequest"
+
+  rLambdaFunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+            - sts:AssumeRole
+        Path: '/'
+        Policies:
+          - PolicyName: !Sub LambdaPublishToSns-${pProjectName}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action:
+                - sns:Get*
+                - sns:List*
+                - sns:Publish
+                - ssm:GetParameter*
+                - ssm:DescribeParameters
+                Resource: '*'
+
+  rSNSNotificationLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: |-
+        A Lambda function to send the approval mail. Whenever a new product launch requires approval, this Lambda function 
+        will be called. This function will get the WaitHandle pre-signed URL and user email address as input.
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref rSNSTopic
+          SSM_API_GW_ENDPOINT: ApprovalWorkflowInvokeUrl
+      Role: !GetAtt rLambdaFunctionRole.Arn
+      FunctionName: !Sub SnsNotificationLambda-${pProjectName}
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Events:
+        ApprovalMethod:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: rWorkflowApiGateway
+            Path: /approveRequest
+            Method: get
+      CodeUri: approve-request/
+
+Outputs:
+  oSNSNotificationLambda:
+    Description: The arn of the Notification Lambda. Use this value as the pNotificationLambdaFunctionArn input in the ec2_approval_template.yml
+    Value: !GetAtt rSNSNotificationLambda.Arn
