@@ -43,7 +43,7 @@ def send_sns_message(event):
 
     {deny_url}
 
-    Please ignore if you do ont want the stack to be launched.
+    Please ignore if you do not want the stack to be launched.
     
     Thank you,
 
