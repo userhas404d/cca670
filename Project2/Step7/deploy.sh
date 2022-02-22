@@ -45,14 +45,20 @@ echo "SNSNotificationLambdaArn: $SNSNotificationLambdaArn"
 echo "=============================================="
 
 echo "=============================================="
+echo "check the inbox of $EMAIL for the SNS subscription email."
+echo "Once you have subscribed: "
+read -n1 -s -r -p $'Press space to continue...\n' key
+echo "=============================================="
+
+echo "=============================================="
 echo "deploying a cfn stack that requires approval"
-echo "check the email of $EMAIL to find the approval url."
+echo "check the inbox of $EMAIL to find the approval url."
 echo "=============================================="
 
 # deploy the stack that requires an approval prior to deployment
 aws cloudformation deploy\
  --template-file ./ec2_approval_template.yml\
- --stack-name "$STACK_NAME-ec10"\
+ --stack-name "$STACK_NAME-ec2"\
  --capabilities CAPABILITY_NAMED_IAM\
  --parameter-overrides\
   pNotificationLambdaFunctionArn=$SNSNotificationLambdaArn
